@@ -31,13 +31,5 @@ class JsIPC {
     }
 }
 
-// Usage example
-const ipc = new JsIPC();
-
-ipc.on('response-channel', (data) => {
-    console.log('Received on response-channel:', data);
-});
-
-ipc.emit('test-channel', 'Hello from JS!');
 
 export default JsIPC;
