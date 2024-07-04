@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_socketio import SocketIO
-import json, base64, random, threading
+import random, threading
 
 class PyIPC:
     def __init__(self, port=5000):
