@@ -26,10 +26,19 @@ class JsIPC {
         this.socket.on(channel, handler);
     }
 
+    off(channel, handler) {
+        if (this.handlers[channel]) {
+            this.handlers[channel] = this.handlers[channel].filter(h => h !== handler);
+            if (this.handlers[channel].length === 0) {
+                delete this.handlers[channel];
+            }
+        }
+        this.socket.off(channel, handler);
+    }
+
     emit(channel, data) {
         this.socket.emit('message', { channel, payload: data });
     }
 }
-
 
 export default JsIPC;
