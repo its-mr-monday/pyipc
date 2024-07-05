@@ -9,6 +9,8 @@ class PyIPC:
         self.socketio = SocketIO(self.app, cors_allowed_origins="*")
         self.port = port
         self.handlers = {}
+        self._thread = None
+        self._running = False
 
         @self.socketio.on('connect')
         def handle_connect():
@@ -26,13 +28,32 @@ class PyIPC:
                 self.handlers[channel](payload)
 
     def start(self):
-        threading.Thread(target=self.run_server, daemon=True).start()
+        if self._running:
+            print(f"PyIPC already running!")
+            return
+        self._thread = threading.Thread(target=self.run_server, daemon=True)
+        self._thread.start()
+        self._running = True
 
     def run_server(self):
-        self.socketio.run(self.app, port=self.port)
+        try:
+            self.socketio.run(self.app, port=self.port)
+        except Exception as e:
+            print(f"Exception occured in PyIPC server thread: {e}")
+        return
 
     def on(self, channel, handler):
         self.handlers[channel] = handler
+        
+    def off(self, channel):
+        if channel in self.handlers:
+            del self.handlers[channel]
 
     def emit(self, channel, data):
         self.socketio.emit(channel, data)
+        
+    def kill(self):
+        self.socketio.stop()
+        if (self._thread):
+            self._thread.join()
+            self._thread = None
