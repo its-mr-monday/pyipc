@@ -1,6 +1,14 @@
+'''
+    Copyright 2024 by its-mr-monday
+    All rights reserved
+    This file is part of the pythonipc library, and is released 
+    under the "MIT License Agreement". Please see the LICENSE file that 
+    should have been included as part of this package
+'''
+
 from flask import Flask, request
 from flask_cors import CORS
-from flask_socketio import SocketIO, join_room, leave_room, emit
+from flask_socketio import SocketIO, join_room, leave_room
 import random, threading
 from functools import wraps
 
@@ -47,20 +55,17 @@ class PyIPC:
             print(f'Client {request.sid} left room: {room}')
 
         @self.socketio.on('message')
-        def handle_message(data):
-            channel = data.get('channel')
-            payload = data.get('payload')
-            room = data.get('room')
+        def handle_message(payload):
+            channel = payload.get('channel')
+            data = payload.get('data')
+            room = payload.get('room')
             
             if room and room in self.room_handlers and channel in self.room_handlers[room]:
-                self.room_handlers[room][channel](payload)
+                result = self.room_handlers[room][channel](data)
+                return result
             elif channel in self.handlers:
-                self.handlers[channel](payload)
-
-        @self.socketio.on_any
-        def catch_all(event, *args, **kwargs):
-            if event in self.handlers:
-                self.handlers[event](*args)
+                result = self.handlers[channel](data)
+                return result
 
     def start(self):
         """
@@ -93,7 +98,8 @@ class PyIPC:
         def decorator(f):
             @wraps(f)
             def wrapped(*args, **kwargs):
-                return f(*args, **kwargs)
+                result = f(*args, **kwargs)
+                return result
             self.handlers[channel] = wrapped
             return wrapped
         return decorator
@@ -110,7 +116,8 @@ class PyIPC:
         def decorator(f):
             @wraps(f)
             def wrapped(*args, **kwargs):
-                return f(*args, **kwargs)
+                result = f(*args, **kwargs)
+                return result
             if room not in self.room_handlers:
                 self.room_handlers[room] = {}
             self.room_handlers[room][channel] = wrapped
@@ -150,10 +157,14 @@ class PyIPC:
         :param room: The room to emit to (if any), defaults to None
         :type room: str, optional
         """
-        if room:
-            self.socketio.emit('message', {'channel': channel, 'payload': data, 'room': room}, room=room)
-        else:
-            self.socketio.emit(channel, data)
+        payload = {
+            'channel': channel,
+            'data': data
+        }
+        if room is not None:
+            payload['room'] = room
+
+        self.socketio.emit('message', payload)
         
     def kill(self):
         """
