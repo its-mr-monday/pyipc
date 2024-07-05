@@ -1,4 +1,4 @@
-# PYIPC
+# PYTHONIPC
 
 This project is solely used because I hate using js for IPC controls
 
@@ -15,7 +15,7 @@ A package for javascript client is available under the following git:
 ### Python Process
 
 ```py
-from pyipc.pyipc import PyIPC
+from pythonipc import PyIPC
 
 ipc = PyIPC()
 
@@ -47,5 +47,5 @@ ipc.emit('test', 'Hello from js');
 Simply install using pip or your favourite package manager
 
 ```console
-    pip install pyipc
+    pip install pythonipc
 ```
