@@ -1,10 +1,11 @@
 from setuptools import setup, find_packages
 setup(
-name='pyipc',
-version='0.1.0',
-author='Zackary Morvan',
+name='pythonipc',
+version='1.1.0',
+author='itsmrmonday',
 author_email='zackary.live8@gmail.com',
 description='Inter-process communication library for Python3 to interact with JS renderer',
+url='https://github.com/its-mr-monday/pyipc',
 packages=find_packages(),
 classifiers=[
 'Programming Language :: Python :: 3',
