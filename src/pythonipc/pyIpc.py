@@ -2,6 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
 import random, threading
+from functools import wraps
 
 class PyIPC:
     def __init__(self, port=5000):
@@ -45,7 +46,13 @@ class PyIPC:
         return
 
     def on(self, channel, handler):
-        self.handlers[channel] = handler
+        def decorator(f):
+            @wraps(f)
+            def wrapped(*args, **kwargs):
+                return f(*args, **kwargs)
+            self.handlers[channel] = wrapped
+            return wrapped
+        return decorator
         
     def off(self, channel):
         if channel in self.handlers:
