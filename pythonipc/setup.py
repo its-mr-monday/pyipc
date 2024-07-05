@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
 name='pythonipc',
-version='1.1.1',
+version='1.1.2',
 author='itsmrmonday',
 author_email='zackary.live8@gmail.com',
 description='Inter-process communication library for Python3 to interact with JS renderer',

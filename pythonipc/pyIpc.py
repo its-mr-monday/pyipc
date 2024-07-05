@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from flask_socketio import SocketIO
 import random, threading
 
@@ -6,6 +7,7 @@ class PyIPC:
     def __init__(self, port=5000):
         self.app = Flask(__name__)
         self.app.config['SECRET_KEY'] = ''.join(random.choice('abcdefghijklmnopqrstuvwxyz0123456789') for i in range(32))
+        CORS(self.app, resources={r"/*": {"origins": "*"}})
         self.socketio = SocketIO(self.app, cors_allowed_origins="*")
         self.port = port
         self.handlers = {}
