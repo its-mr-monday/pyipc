@@ -59,6 +59,14 @@ def greet_handler(data):
     return f"Hello, {data['name']}!"
 ```
 
+#### off(event: str)
+
+Removes a handler for a specific event.
+
+```python
+ipc.off('greet')
+```
+
 #### async invoke(event: str, data: Any) -> Any
 
 Invokes a remote procedure and waits for its response.

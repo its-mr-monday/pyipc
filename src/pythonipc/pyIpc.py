@@ -34,6 +34,24 @@ class PyIPC:
         self._thread = None
         self._running = False
         self.response_futures: dict[str, asyncio.Future] = {}
+        
+        @self.socketio.on('message')
+        def handle_message(payload):
+            event = payload.get('event')
+            data = payload.get('data')
+            response_id = payload.get('response_id')
+            
+            if response_id and response_id in self.response_futures:
+                # This is a response to a previous invoke call
+                future = self.response_futures.pop(response_id)
+                future.set_result(data)
+            elif event in self.handlers:
+                # This is a new event to be handled
+                result = self.handlers[event](data)
+                if response_id:
+                    # If the client is expecting a response, send it
+                    self.socketio.emit('message', {'event': event, 'data': result, 'response_id': response_id})
+
 
     def start(self) -> None:
         """
@@ -64,6 +82,18 @@ class PyIPC:
             self.handlers[event] = f
             return f
         return decorator
+    
+    def off(self, event: str) -> None:
+        """
+        Removes a handler for a specific event.
+
+        :param event: The event to stop listening for
+        :type event: str
+        """
+        if event in self.handlers:
+            del self.handlers[event]
+        else:
+            print(f"Warning: No handler found for event '{event}'")
 
     async def invoke(self, event: str, data: Any) -> Any:
         """
