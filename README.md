@@ -10,38 +10,6 @@ A package for javascript client is available under the following git:
 
 [JsIPC](https://github.com/its-mr-monday/jsipc)
 
-## Usage
-
-### Python Process
-
-```py
-from pythonipc import PyIPC
-
-ipc = PyIPC()
-
-@ipc.on('test')
-def test(data):
-    print(data)
-    ipc.emit('test', 'Hello from python')
-
-ipc.start()
-
-```
-
-### JS Process
-
-```js
-import JsIPC from '@its-mr-monday/jsipc';
-
-const ipc = new JsIPC();
-
-ipc.on('test', (data) => {
-    console.log(data);
-});
-
-ipc.emit('test', 'Hello from js');
-```
-
 ## Installation
 
 Simply install using pip or your favourite package manager
@@ -49,3 +17,87 @@ Simply install using pip or your favourite package manager
 ```console
     pip install pythonipc
 ```
+
+# PYTHONIPC ocumentation
+
+## Import
+
+```python
+from pythonipc import PyIPC
+```
+
+## Class: PyIPC
+
+### Constructor
+
+```python
+PyIPC(port: int = 5000)
+```
+
+Creates a new PyIPC instance.
+
+- `port`: The port number to run the server on (default is 5000)
+
+### Methods
+
+#### start()
+
+Starts the PyIPC server in a separate thread.
+
+```python
+ipc = PyIPC()
+ipc.start()
+```
+
+#### on(event: str)
+
+Decorator to register a handler for a specific event.
+
+```python
+@ipc.on('greet')
+def greet_handler(data):
+    return f"Hello, {data['name']}!"
+```
+
+#### async invoke(event: str, data: Any) -> Any
+
+Invokes a remote procedure and waits for its response.
+
+```python
+result = await ipc.invoke('greet', {'name': 'Alice'})
+print(result)  # Outputs: Hello, Alice!
+```
+
+#### kill()
+
+Stops the PyIPC server and cleans up resources.
+
+```python
+ipc.kill()
+```
+
+## Full Example
+
+```python
+import asyncio
+from pythonipc import PyIPC
+
+ipc = PyIPC(port=5000)
+
+@ipc.on('greet')
+def greet_handler(data):
+    return f"Hello, {data['name']}!"
+
+async def main():
+    ipc.start()
+    
+    try:
+        result = await ipc.invoke('greet', {'name': 'Alice'})
+        print(result)  # Outputs: Hello, Alice!
+    finally:
+        ipc.kill()
+
+asyncio.run(main())
+```
+
+This example sets up a PyIPC server, registers a 'greet' handler, invokes it, and then shuts down the server.

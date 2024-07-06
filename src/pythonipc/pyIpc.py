@@ -6,171 +6,97 @@
     should have been included as part of this package
 '''
 
-from flask import Flask, request
+import asyncio
+from flask import Flask
+from flask_socketio import SocketIO
 from flask_cors import CORS
-from flask_socketio import SocketIO, join_room, leave_room
-import random, threading
-from functools import wraps
+import random
+import string
+from typing import Any, Callable
 
 class PyIPC:
     """
     PyIPC class for inter-process communication using Socket.IO
     """
 
-    def __init__(self, port=5000):
+    def __init__(self, port: int = 5000):
         """
         Initialize a new PyIPC instance
-        
+
         :param port: The port number to run the server on (default is 5000)
         :type port: int
         """
         self.app = Flask(__name__)
-        self.app.config['SECRET_KEY'] = ''.join(random.choice('abcdefghijklmnopqrstuvwxyz0123456789') for i in range(32))
-        CORS(self.app, resources={r"/*": {"origins": "*"}})
-        self.socketio = SocketIO(self.app, cors_allowed_origins="*")
+        CORS(self.app)
+        self.socketio = SocketIO(self.app, cors_allowed_origins="*", async_mode='threading')
         self.port = port
-        self.handlers = {}
-        self.room_handlers = {}
+        self.handlers: dict[str, Callable] = {}
         self._thread = None
         self._running = False
+        self.response_futures: dict[str, asyncio.Future] = {}
 
-        @self.socketio.on('connect')
-        def handle_connect():
-            print('Client connected')
-
-        @self.socketio.on('disconnect')
-        def handle_disconnect():
-            print('Client disconnected')
-
-        @self.socketio.on('join')
-        def on_join(data):
-            room = data['room']
-            join_room(room)
-            print(f'Client {request.sid} joined room: {room}')
-
-        @self.socketio.on('leave')
-        def on_leave(data):
-            room = data['room']
-            leave_room(room)
-            print(f'Client {request.sid} left room: {room}')
-
-        @self.socketio.on('message')
-        def handle_message(payload):
-            channel = payload.get('channel')
-            data = payload.get('data')
-            room = payload.get('room')
-            
-            if room and room in self.room_handlers and channel in self.room_handlers[room]:
-                result = self.room_handlers[room][channel](data)
-                return result
-            elif channel in self.handlers:
-                result = self.handlers[channel](data)
-                return result
-
-    def start(self):
+    def start(self) -> None:
         """
         Start the PyIPC server in a separate thread
         """
         if self._running:
-            print(f"PyIPC already running!")
+            print("PyIPC already running!")
             return
-        self._thread = threading.Thread(target=self.run_server, daemon=True)
-        self._thread.start()
+        self._thread = asyncio.get_event_loop().run_in_executor(None, self.run_server)
         self._running = True
 
-    def run_server(self):
+    def run_server(self) -> None:
         """
         Run the Socket.IO server (internal method)
         """
-        try:
-            self.socketio.run(self.app, port=self.port)
-        except Exception as e:
-            print(f"Exception occurred in PyIPC server thread: {e}")
-        return
+        self.socketio.run(self.app, port=self.port)
 
-    def on(self, channel):
+    def on(self, event: str) -> Callable:
         """
-        Decorator to register a handler for a specific channel
-        
-        :param channel: The channel to listen on
-        :type channel: str
+        Decorator to register a handler for a specific event
+
+        :param event: The event to listen on
+        :type event: str
+        :return: Decorator function
+        :rtype: Callable
         """
-        def decorator(f):
-            @wraps(f)
-            def wrapped(*args, **kwargs):
-                result = f(*args, **kwargs)
-                return result
-            self.handlers[channel] = wrapped
-            return wrapped
+        def decorator(f: Callable) -> Callable:
+            self.handlers[event] = f
+            return f
         return decorator
 
-    def on_room(self, room, channel):
+    async def invoke(self, event: str, data: Any) -> Any:
         """
-        Decorator to register a handler for a specific room and channel
-        
-        :param room: The room to join
-        :type room: str
-        :param channel: The channel to listen on within the room
-        :type channel: str
-        """
-        def decorator(f):
-            @wraps(f)
-            def wrapped(*args, **kwargs):
-                result = f(*args, **kwargs)
-                return result
-            if room not in self.room_handlers:
-                self.room_handlers[room] = {}
-            self.room_handlers[room][channel] = wrapped
-            return wrapped
-        return decorator
-        
-    def off(self, channel):
-        """
-        Remove a handler for a specific channel
-        
-        :param channel: The channel to stop listening on
-        :type channel: str
-        """
-        if channel in self.handlers:
-            del self.handlers[channel]
+        Invoke a remote procedure and wait for its response
 
-    def off_room(self, room, channel):
-        """
-        Remove a handler for a specific room and channel
-        
-        :param room: The room to leave
-        :type room: str
-        :param channel: The channel to stop listening on within the room
-        :type channel: str
-        """
-        if room in self.room_handlers and channel in self.room_handlers[room]:
-            del self.room_handlers[room][channel]
-
-    def emit(self, channel, data, room=None):
-        """
-        Emit a message on a specific channel, optionally to a specific room
-        
-        :param channel: The channel to emit on
-        :type channel: str
-        :param data: The data to emit
+        :param event: The event name of the remote procedure
+        :type event: str
+        :param data: The data to send with the invocation
         :type data: Any
-        :param room: The room to emit to (if any), defaults to None
-        :type room: str, optional
+        :return: The response from the remote procedure
+        :rtype: Any
         """
-        payload = {
-            'channel': channel,
-            'data': data
-        }
-        if room is not None:
-            payload['room'] = room
+        response_id = self.generateUUID()
+        future = asyncio.Future()
+        self.response_futures[response_id] = future
 
-        self.socketio.emit('message', payload)
-        
-    def kill(self):
+        self.socketio.emit('message', {'event': event, 'data': data, 'response_id': response_id})
+        return await future
+
+    def generateUUID(self) -> str:
+        """
+        Generate a random 32-character string of alphabetic characters
+
+        :return: A unique identifier string
+        :rtype: str
+        """
+        return ''.join(random.choices(string.ascii_letters, k=32))
+
+    def kill(self) -> None:
         """
         Stop the PyIPC server and clean up resources
         """
-        self.socketio.stop()
-        if (self._thread):
-            self._thread.join()
-            self._thread = None
+        if self._running:
+            self.socketio.stop()
+            self._thread.cancel()
+            self._running = False
