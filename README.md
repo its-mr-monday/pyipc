@@ -31,7 +31,7 @@ from pythonipc import PyIPC
 ### Constructor
 
 ```python
-PyIPC(port: int = 5000)
+PyIPC(port: int = 5000, logger = False)
 ```
 
 Creates a new PyIPC instance.
@@ -67,7 +67,7 @@ Removes a handler for a specific event.
 ipc.off('greet')
 ```
 
-#### async invoke(event: str, data: Any) -> Any
+#### invoke(event: str, data: Any, timeout: float = 5.0) -> Any
 
 Invokes a remote procedure and waits for its response.
 
@@ -87,7 +87,6 @@ ipc.kill()
 ## Full Example
 
 ```python
-import asyncio
 from pythonipc import PyIPC
 
 ipc = PyIPC(port=5000)
@@ -96,16 +95,16 @@ ipc = PyIPC(port=5000)
 def greet_handler(data):
     return f"Hello, {data['name']}!"
 
-async def main():
+def main():
     ipc.start()
     
     try:
-        result = await ipc.invoke('greet', {'name': 'Alice'})
+        result = ipc.invoke('greet', {'name': 'Alice'})
         print(result)  # Outputs: Hello, Alice!
     finally:
         ipc.kill()
 
-asyncio.run(main())
+main()
 ```
 
 This example sets up a PyIPC server, registers a 'greet' handler, invokes it, and then shuts down the server.
