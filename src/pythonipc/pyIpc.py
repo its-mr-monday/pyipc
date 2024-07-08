@@ -121,13 +121,13 @@ class PyIPC:
             return f
         return decorator
 
-    def invoke(self, event: str, data: Any, timeout: float = 15.0) -> Any:
+    def invoke(self, event: str, data: Any = None, timeout: float = 15.0) -> Any:
         """
         Invoke a remote procedure and wait for its response.
         
         Args:
             event (str): The name of the event to invoke.
-            data (Any): The data to send with the event.
+            data (Any, optional): The data to send with the event. Defaults to None.
             timeout (float): Maximum time to wait for a response, in seconds.
         
         Returns:
@@ -136,8 +136,12 @@ class PyIPC:
         Raises:
             TimeoutError: If no response is received within the timeout period.
         """
+        if data is None:
+            data = {}  # Use an empty dictionary if no data is provided
+        
         if self.logger:
             self.log.info(f"Invoking event: {event} with data: {data}")
+        
         response_id = self._generate_uuid()
         self.responses[response_id] = None
         self.response_locks[response_id] = threading.Lock()
