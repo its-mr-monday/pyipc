@@ -120,6 +120,25 @@ class PyIPC:
             self.handlers[event] = f
             return f
         return decorator
+    
+    def off(self, event: str) -> bool:
+        """
+        Remove an event handler.
+
+        Args:
+            event (str): The name of the event to remove the handler for.
+
+        Returns:
+            bool: True if a handler was removed, False if no handler was found for the event.
+        """
+        if event in self.handlers:
+            del self.handlers[event]
+            if self.logger:
+                self.log.info(f"Removed handler for event: {event}")
+            return True
+        if self.logger:
+            self.log.warning(f"No handler found to remove for event: {event}")
+        return False
 
     def invoke(self, event: str, data: Any = None, timeout: float = 15.0) -> Any:
         """

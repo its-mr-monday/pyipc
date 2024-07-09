@@ -67,12 +67,12 @@ Removes a handler for a specific event.
 ipc.off('greet')
 ```
 
-#### invoke(event: str, data: Any, timeout: float = 5.0) -> Any
+#### invoke(event: str, data: Any = None, timeout: float = 5.0) -> Any
 
 Invokes a remote procedure and waits for its response.
 
 ```python
-result = await ipc.invoke('greet', {'name': 'Alice'})
+result = ipc.invoke('greet', {'name': 'Alice'})
 print(result)  # Outputs: Hello, Alice!
 ```
 
