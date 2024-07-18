@@ -5,7 +5,7 @@ with open('README.md', 'r') as f:
     long_description = f.read()
 setup(
     name='pythonipc',
-    version='1.3.5',
+    version='1.3.7',
     author='itsmrmonday',
     author_email='zackary.live8@gmail.com',
     description='Inter-process communication library for Python3 to interact with JS renderer',

@@ -6,14 +6,10 @@
     should have been included as part of this package
 '''
 
-import threading
-import time
+import threading, time, logging, random, string, inspect
 from flask import Flask
 from flask_socketio import SocketIO
 from flask_cors import CORS
-import logging
-import random
-import string
 from typing import Any
 
 class ThreadCancellationToken:
@@ -81,7 +77,11 @@ class PyIPC:
                 # This is a new event to handle
                 if self.logger:
                     self.log.info(f"Handling event: {event}")
-                result = self.handlers[event](data)
+                handler = self.handlers[event]
+                if len(inspect.signature(handler).parameters) == 2:
+                    result = self.handlers[event](data, response_id)
+                else:
+                    result = self.handlers[event](data)
                 if response_id:
                     if self.logger:
                         self.log.info(f"Sending response for event: {event}")
