@@ -78,8 +78,9 @@ class PyIPC:
                 if self.logger:
                     self.log.info(f"Handling event: {event}")
                 handler = self.handlers[event]
-                if len(inspect.signature(handler).parameters) == 2:
-                    result = self.handlers[event](data, response_id)
+                sig = inspect.signature(handler)
+                if len(sig.parameters) == 0:
+                    result = self.handlers[event]()
                 else:
                     result = self.handlers[event](data)
                 if response_id:
