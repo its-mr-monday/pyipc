@@ -31,7 +31,7 @@ from pythonipc import PyIPC
 ### Constructor
 
 ```python
-PyIPC(port: int = 5000, logger = False)
+PyIPC(port: int = 5000, debug = False)
 ```
 
 Creates a new PyIPC instance.

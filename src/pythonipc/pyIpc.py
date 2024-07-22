@@ -28,7 +28,7 @@ class PyIPC:
         port (int): The port on which the server will run.
         logger (bool): Flag to enable or disable logging.
     """
-    def __init__(self, port: int = 5000, logger: bool = False):
+    def __init__(self, port: int = 5000, debug: bool = False):
         """
         Initialize the PyIPC server.
         
@@ -37,6 +37,7 @@ class PyIPC:
             logger (bool): Flag to enable or disable logging.
         """
         self.app = Flask(__name__)
+        self.debug = debug
         self.app.logger.setLevel(logging.ERROR)  # Suppress Flask logs
         CORS(self.app)  # Enable CORS for all routes
 
@@ -49,7 +50,7 @@ class PyIPC:
         self._running = False  # Flag to indicate if server is running
         self.responses = {}  # Store responses keyed by response_id
         self.response_locks = {}  # Locks for thread-safe access to responses
-        self.logger = logger  # Enable or disable logging
+        self.logger = self.debug  # Enable or disable logging
 
         if self.logger:
             logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -105,7 +106,7 @@ class PyIPC:
 
     def _run_server(self):
         """Run the SocketIO server."""
-        self.socketio.run(self.app, port=self.port, debug=False, log_output=False)
+        self.socketio.run(self.app, port=self.port, debug=self.debug, log_output=False)
 
     def on(self, event):
         """
