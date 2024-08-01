@@ -1,9 +1,9 @@
 '''
-Copyright 2024 by its-mr-monday
-All rights reserved
-This file is part of the pythonipc library, and is released
-under the "MIT License Agreement". Please see the LICENSE file that
-should have been included as part of this package
+    Copyright 2024 by its-mr-monday
+    All rights reserved
+    This file is part of the pythonipc library, and is released 
+    under the "MIT License Agreement". Please see the LICENSE file that 
+    should have been included as part of this package
 '''
 
 import threading, time, logging, random, string, inspect
@@ -11,7 +11,6 @@ from flask import Flask
 from flask_socketio import SocketIO
 from flask_cors import CORS
 from typing import Any
-import eventlet
 
 class ThreadCancellationToken:
     """A simple token to allow for cancellation of a thread."""
@@ -24,16 +23,15 @@ class ThreadCancellationToken:
 class PyIPC:
     """
     PyIPC class for inter-process communication using Flask-SocketIO.
-
+    
     Attributes:
         port (int): The port on which the server will run.
         logger (bool): Flag to enable or disable logging.
     """
-
     def __init__(self, port: int = 5000, debug: bool = False):
         """
         Initialize the PyIPC server.
-
+        
         Args:
             port (int): The port on which the server will run.
             logger (bool): Flag to enable or disable logging.
@@ -43,10 +41,9 @@ class PyIPC:
         self.app.logger.setLevel(logging.ERROR)  # Suppress Flask logs
         CORS(self.app)  # Enable CORS for all routes
 
-        # Use eventlet as the async mode
-        eventlet.monkey_patch()
-        self.socketio = SocketIO(self.app, cors_allowed_origins="*", async_mode='eventlet', logger=False, engineio_logger=False)
-
+        # Initialize SocketIO with threading mode
+        self.socketio = SocketIO(self.app, cors_allowed_origins="*", async_mode='threading', logger=False, engineio_logger=False)
+        
         self.port = port
         self.handlers = {}  # Store event handlers
         self._thread = None  # Thread for running the server
@@ -70,7 +67,7 @@ class PyIPC:
             event = payload.get('event')
             data = payload.get('data')
             response_id = payload.get('response_id')
-
+            
             if response_id and response_id in self.response_locks:
                 # This is a response to a previous request
                 if self.logger:
@@ -101,7 +98,6 @@ class PyIPC:
             if self.logger:
                 self.log.warning("PyIPC already running!")
             return
-
         self._thread = threading.Thread(target=self._run_server, daemon=True)
         self._thread.start()
         self._running = True
@@ -110,15 +106,15 @@ class PyIPC:
 
     def _run_server(self):
         """Run the SocketIO server."""
-        self.socketio.run(self.app, port=self.port, debug=self.debug, log_output=False, use_reloader=False)
+        self.socketio.run(self.app, port=self.port, debug=self.debug, log_output=False)
 
     def on(self, event):
         """
         Decorator to register event handlers.
-
+        
         Args:
             event (str): The name of the event to handle.
-
+        
         Returns:
             function: The decorator function.
         """
@@ -126,7 +122,7 @@ class PyIPC:
             self.handlers[event] = f
             return f
         return decorator
-
+    
     def off(self, event: str) -> bool:
         """
         Remove an event handler.
@@ -149,27 +145,28 @@ class PyIPC:
     def invoke(self, event: str, data: Any = None, timeout: float = 15.0) -> Any:
         """
         Invoke a remote procedure and wait for its response.
-
+        
         Args:
             event (str): The name of the event to invoke.
             data (Any, optional): The data to send with the event. Defaults to None.
             timeout (float): Maximum time to wait for a response, in seconds.
-
+        
         Returns:
             Any: The response data from the remote procedure.
-
+        
         Raises:
             TimeoutError: If no response is received within the timeout period.
         """
         if data is None:
             data = {}  # Use an empty dictionary if no data is provided
-
+        
         if self.logger:
             self.log.info(f"Invoking event: {event} with data: {data}")
-
+        
         response_id = self._generate_uuid()
         self.responses[response_id] = None
         self.response_locks[response_id] = threading.Lock()
+
         cancellation_token = ThreadCancellationToken()
 
         # Emit the event via SocketIO
