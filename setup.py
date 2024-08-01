@@ -5,7 +5,7 @@ with open('README.md', 'r') as f:
     long_description = f.read()
 setup(
     name='pythonipc',
-    version='1.3.9',
+    version='1.4.0',
     author='itsmrmonday',
     author_email='zackary.live8@gmail.com',
     description='Inter-process communication library for Python3 to interact with JS renderer',
@@ -23,6 +23,7 @@ setup(
     install_requires=[
         'flask',
         'flask_cors',
-        'flask_socketio'
+        'flask_socketio',
+        'eventlet'
     ]
 )
