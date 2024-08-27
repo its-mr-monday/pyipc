@@ -1,10 +1,10 @@
-'''
+"""
     Copyright 2024 by its-mr-monday
     All rights reserved
     This file is part of the pythonipc library, and is released 
     under the "MIT License Agreement". Please see the LICENSE file that 
     should have been included as part of this package
-'''
+"""
 
 import threading, time, logging, random, string, inspect
 from flask import Flask
@@ -58,6 +58,22 @@ class PyIPC:
         else:
             self.log = logging.getLogger(__name__)
             self.log.setLevel(logging.ERROR)
+            
+        self._clients_connected = 0
+        
+        @self.socketio.on('connect')
+        def handle_connect():
+            """Handle new SocketIO connections."""
+            self._clients_connected += 1
+            if self.logger:
+                self.log.info(f"Client connected. Total clients: {self._clients_connected}")
+                
+        @self.socketio.on('disconnect')
+        def handle_disconnect():
+            """Handle SocketIO disconnections."""
+            self._clients_connected -= 1
+            if self.logger:
+                self.log.info(f"Client disconnected. Total clients: {self._clients_connected}")
 
         @self.socketio.on('message')
         def handle_message(payload):
@@ -91,6 +107,14 @@ class PyIPC:
             else:
                 if self.logger:
                     self.log.warning(f"No handler found for event: {event}")
+                    
+    def get_connections(self) -> int:
+        """Get the number of connected clients."""
+        return self._clients_connected
+    
+    def has_connection(self) -> bool:
+        """Check if there are any connected clients."""
+        return self._clients_connected > 0
 
     def start(self):
         """Start the SocketIO server in a separate thread."""
@@ -106,7 +130,7 @@ class PyIPC:
 
     def _run_server(self):
         """Run the SocketIO server."""
-        self.socketio.run(self.app, port=self.port, debug=self.debug, log_output=False)
+        self.socketio.run(self.app, port=self.port, debug=False, log_output=False)
 
     def on(self, event):
         """

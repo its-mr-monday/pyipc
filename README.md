@@ -76,6 +76,24 @@ result = ipc.invoke('greet', {'name': 'Alice'})
 print(result)  # Outputs: Hello, Alice!
 ```
 
+#### get_connections() -> int
+
+Get the number of connected clients.
+
+```python
+connections = ipc.get_connections()
+print(f"There are {connections} clients connected")
+```
+
+### has_connection() -> bool
+
+Check if there are any connected clients.
+
+```python
+if ipc.has_connection():
+    print("We have a connection!")
+```
+
 #### kill()
 
 Stops the PyIPC server and cleans up resources.
